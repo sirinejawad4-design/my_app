@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../generated/app_colors.dart';
+import '../../../../../generated/style_atoms.dart';
+import '../../../../core/widgets/custom_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -24,11 +27,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: const BackButton(color: AppColors.black),
       ),
       body: SafeArea(
         child: Padding(
@@ -37,23 +40,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
-              const Text(
+              Text(
                 'Forgot password',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: context.bold24TextMain,
               ),
               const SizedBox(height: 8),
               Text(
                 'Enter your email for the verification process, we will send a 4 digits code to your email',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: context.regular12TextSub,
               ),
-
               const SizedBox(height: 24),
-
-              const Text('Email', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text('Email', style: context.semiBold14TextMain),
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
@@ -61,7 +58,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter your email',
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: AppColors.grey100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
@@ -70,25 +67,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _onContinuePressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1F9E6E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+              CustomButton(
+                text: 'Continue',
+                onPressed: _onContinuePressed,
               ),
             ],
           ),

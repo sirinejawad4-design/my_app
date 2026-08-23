@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../generated/app_colors.dart';
+import '../../../../../generated/style_atoms.dart';
+import '../../../../core/widgets/custom_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,15 +25,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onLoginPressed() {
-    
     debugPrint('Email: ${_emailController.text}');
     debugPrint('Password: ${_passwordController.text}');
+    context.go('/home');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -38,23 +41,16 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 60),
-
-              const Text(
+              Text(
                 'Welcome back',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: context.bold24TextMain,
               ),
               const SizedBox(height: 8),
               Text(
                 'Login to continue finding trusted doctors and booking appointments',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: context.regular12TextSub,
               ),
-
               const SizedBox(height: 24),
-
-              
               Row(
                 children: [
                   Expanded(child: _buildSocialButton('Google', Icons.g_mobiledata)),
@@ -62,22 +58,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   Expanded(child: _buildSocialButton('Facebook', Icons.facebook)),
                 ],
               ),
-
               const SizedBox(height: 24),
-
-              // Email
-              const Text('Email', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text('Email', style: context.semiBold14TextMain),
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: _inputDecoration('Enter your email'),
               ),
-
               const SizedBox(height: 16),
-
-              // Password
-              const Text('Password', style: TextStyle(fontWeight: FontWeight.w600)),
+              Text('Password', style: context.semiBold14TextMain),
               const SizedBox(height: 8),
               TextField(
                 controller: _passwordController,
@@ -86,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey,
+                      color: AppColors.textSub,
                     ),
                     onPressed: () {
                       setState(() {
@@ -96,71 +86,43 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // Login
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _onLoginPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1F9E6E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Login',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+              CustomButton(
+                text: 'Login',
+                onPressed: _onLoginPressed,
               ),
-
               const SizedBox(height: 12),
-
-              // Forgot password
               Center(
                 child: TextButton(
                   onPressed: () {
                     context.go('/forgot-password');
-                    
-                    // Forgot Password baadn bdnaa nrbta bi screen forget
                   },
-                  child: const Text(
+                  child: Text(
                     'Forgot password?',
-                    style: TextStyle(color: Color(0xFF1F9E6E)),
+                    style: context.semiBold14Primary,
                   ),
                 ),
               ),
-
               const SizedBox(height: 8),
-
-              // link Don't have an account? Join us
               Center(
                 child: TextButton(
                   onPressed: () {
                     context.go('/sign-up');
                   },
                   child: RichText(
-                    text: const TextSpan(
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    text: TextSpan(
+                      style: context.regular12TextSub,
                       children: [
-                        TextSpan(text: "Don't have an account? "),
+                        const TextSpan(text: "Don't have an account? "),
                         TextSpan(
                           text: 'Join us',
-                          style: TextStyle(
-                            color: Color(0xFF1F9E6E),
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: context.bold12Primary,
                         ),
                       ],
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
             ],
           ),
@@ -176,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
       label: Text(label),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        side: BorderSide(color: Colors.grey[300]!),
+        side: const BorderSide(color: AppColors.textBorders),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -188,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: AppColors.grey100,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../generated/app_colors.dart';
+import '../../../../../generated/style_atoms.dart';
+import '../../../../core/widgets/custom_button.dart';
 
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
@@ -9,7 +12,6 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  // 4 controllers، 
   final List<TextEditingController> _controllers =
       List.generate(4, (index) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(4, (index) => FocusNode());
@@ -26,22 +28,19 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   void _onContinuePressed() {
-   
     final String code = _controllers.map((c) => c.text).join();
     debugPrint('Entered code: $code');
-
-    
     context.go('/reset-password');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: const BackButton(color: AppColors.black),
       ),
       body: SafeArea(
         child: Padding(
@@ -50,46 +49,24 @@ class _OtpScreenState extends State<OtpScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
-              const Text(
+              Text(
                 'Enter 4 Digits Code',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: context.bold24TextMain,
               ),
               const SizedBox(height: 8),
               Text(
                 'Enter the 4 digits code that you received on your email',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: context.regular12TextSub,
               ),
-
               const SizedBox(height: 32),
-
-              // 4 filed la raj3
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(4, (index) => _buildOtpBox(index)),
               ),
-
               const SizedBox(height: 32),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _onContinuePressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1F9E6E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+              CustomButton(
+                text: 'Continue',
+                onPressed: _onContinuePressed,
               ),
             ],
           ),
@@ -108,11 +85,11 @@ class _OtpScreenState extends State<OtpScreen> {
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 1,
-        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        style: context.bold22TextMain,
         decoration: InputDecoration(
           counterText: '',
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: AppColors.grey100,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide.none,

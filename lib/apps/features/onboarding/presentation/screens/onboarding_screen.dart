@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../generated/app_colors.dart';
+import '../../../../../generated/style_atoms.dart';
+import '../../../../core/widgets/custom_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -11,7 +14,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
 
   final List<Map<String, String>> _pages = [
     {
@@ -36,26 +38,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _onNextPressed() {
     if (_currentPage < _pages.length - 1) {
-    
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      
       context.go('/choose-role');
     }
   }
 
   void _onSkipPressed() {
-    
     context.go('/choose-role');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -75,12 +74,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                    
                         Container(
                           width: 220,
                           height: 220,
                           decoration: const BoxDecoration(
-                            color: Color(0xFF1F9E6E),
+                            color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -88,19 +86,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           page['title']!,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: context.bold22TextMain,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           page['description']!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                          style: context.regular14TextSub,
                         ),
                       ],
                     ),
@@ -108,8 +100,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
               ),
             ),
-
-            
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -121,49 +111,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 8,
                   decoration: BoxDecoration(
                     color: _currentPage == index
-                        ? const Color(0xFF1F9E6E)
-                        : Colors.grey[300],
+                        ? AppColors.primary
+                        : AppColors.textBorders,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
-
-          
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _onNextPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1F9E6E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    _pages[_currentPage]['buttonText']!,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
+              child: CustomButton(
+                text: _pages[_currentPage]['buttonText']!,
+                onPressed: _onNextPressed,
               ),
             ),
-
             const SizedBox(height: 12),
-
-            
             TextButton(
               onPressed: _onSkipPressed,
-              child: const Text(
+              child: Text(
                 'Skip',
-                style: TextStyle(color: Colors.grey),
+                style: context.regular14TextSub,
               ),
             ),
           ],

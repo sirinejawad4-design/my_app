@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../generated/app_colors.dart';
+import '../../../../../generated/style_atoms.dart';
+import '../../../../core/widgets/custom_button.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -24,26 +27,29 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   void _onUpdatePasswordPressed() {
-   
     if (_newPasswordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
+        SnackBar(
+          content: Text(
+            'Passwords do not match',
+            style: context.regular12White,
+          ),
+          backgroundColor: AppColors.danger,
+        ),
       );
       return;
     }
-
-  
     context.go('/login');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: const BackButton(color: AppColors.black),
       ),
       body: SafeArea(
         child: Padding(
@@ -52,24 +58,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-
-              const Text(
+              Text(
                 'Reset Password',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: context.bold24TextMain,
               ),
               const SizedBox(height: 8),
               Text(
                 'Set the new password for your account so you can login and access all the features',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: context.regular12TextSub,
               ),
-
               const SizedBox(height: 24),
-
-              const Text('New Password',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Text('New Password', style: context.semiBold14TextMain),
               const SizedBox(height: 8),
               TextField(
                 controller: _newPasswordController,
@@ -80,7 +79,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       _obscureNewPassword
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Colors.grey,
+                      color: AppColors.textSub,
                     ),
                     onPressed: () {
                       setState(() {
@@ -90,11 +89,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              const Text('Re-enter Password',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
+              Text('Re-enter Password', style: context.semiBold14TextMain),
               const SizedBox(height: 8),
               TextField(
                 controller: _confirmPasswordController,
@@ -106,7 +102,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       _obscureConfirmPassword
                           ? Icons.visibility_off
                           : Icons.visibility,
-                      color: Colors.grey,
+                      color: AppColors.textSub,
                     ),
                     onPressed: () {
                       setState(() {
@@ -116,25 +112,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _onUpdatePasswordPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1F9E6E),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Update Password',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
+              CustomButton(
+                text: 'Update Password',
+                onPressed: _onUpdatePasswordPressed,
               ),
             ],
           ),
@@ -147,7 +128,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: AppColors.grey100,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
