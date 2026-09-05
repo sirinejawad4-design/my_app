@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../generated/app_colors.dart';
 import 'home_screen.dart';
+import 'favourites_screen.dart';
 //fi charit tankol(home fav appointment mess)juwtu contnt bytghyr hasab aya tab f2st
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -16,7 +17,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   //liste fiya 4 screens w kl 3nsor bl lista huwe raem mwk3 bl trtib
   final List<Widget> _screens = const [
     HomeScreen(),
-    _PlaceholderScreen(title: 'Favorites'),
+    FavouritesScreen(),
     _PlaceholderScreen(title: 'Appointments'),
     _PlaceholderScreen(title: 'Messages'),
   ];

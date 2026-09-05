@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
+import 'package:go_router/go_router.dart';
 
 class DoctorDetailsScreen extends StatelessWidget {
   final String doctorName;
@@ -104,25 +105,26 @@ class DoctorDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // زرار Book Now
+            
             SizedBox(
               width: double.infinity,
               height: 46,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => context.push('/select-time'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+              
                 child: Text('Book Now', style: context.semiBold16White),
               ),
             ),
 
             const SizedBox(height: 24),
 
-            // الإحصائيات (Rating, Ongoing, Patient)
+            
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -134,7 +136,7 @@ class DoctorDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // قسم Services
+           
             Text('Services', style: context.bold16TextMain),
             const SizedBox(height: 12),
             _buildServiceItem(
@@ -155,7 +157,6 @@ class DoctorDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // خريطة توضيحية (placeholder مؤقت)
             Container(
               width: double.infinity,
               height: 160,
@@ -179,7 +180,7 @@ class DoctorDetailsScreen extends StatelessWidget {
     );
   }
 
-  // عنصر إحصائية واحدة (Rating/Ongoing/Patient)
+  
   Widget _buildStat(BuildContext context, String value, String label) {
     return Column(
       children: [

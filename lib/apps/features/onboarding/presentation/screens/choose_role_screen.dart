@@ -15,9 +15,12 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
   String _selectedRole = 'Patient';
 
   void _onContinuePressed() {
+  if (_selectedRole == 'Admin') {
+    context.go('/admin-login');
+  } else {
     context.go('/sign-up');
   }
-
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(

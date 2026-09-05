@@ -5,51 +5,49 @@ import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
-  final TextEditingController _nameController = TextEditingController();
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoading = false; // لعرض دائرة تحميل أثناء الاتصال بـ Firebase
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  Future<void> _onSignUpPressed() async {
+  Future<void> _onLoginPressed() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // إنشاء حساب جديد فعلياً بـ Firebase
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // تسجيل دخول الأدمن بنفس نظام Firebase Auth
+      // ملاحظة: حساب الأدمن مسجّل مسبقاً بـ Firebase (مافي Sign Up للأدمن)
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
       if (mounted) {
-        context.go('/home');
+        context.go('/doctors-list');
       }
     } on FirebaseAuthException catch (e) {
-      // رسائل خطأ واضحة حسب نوع المشكلة
       String message = 'Something went wrong. Please try again.';
-      if (e.code == 'email-already-in-use') {
-        message = 'This email is already registered.';
-      } else if (e.code == 'weak-password') {
-        message = 'Password is too weak.';
+      if (e.code == 'user-not-found') {
+        message = 'No admin account found with this email.';
+      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        message = 'Incorrect email or password.';
       } else if (e.code == 'invalid-email') {
         message = 'Please enter a valid email.';
       }
@@ -75,46 +73,51 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        elevation: 0,
+        leading: const BackButton(color: AppColors.black),
+      ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
-              Text(
-                'Join us to start searching',
-                style: context.bold24TextMain,
+              const SizedBox(height: 20),
+
+              // اللوغو بالنص
+              Center(
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.local_hospital_rounded,
+                      size: 48,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Welcome Back!', style: context.bold22TextMain),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Login to your admin account',
+                      style: context.regular12TextSub,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'You can search doctors, book appointments and find trusted care',
-                style: context.regular12TextSub,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(child: _buildSocialButton('Google', Icons.g_mobiledata)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildSocialButton('Facebook', Icons.facebook)),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text('Name', style: context.semiBold14TextMain),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _nameController,
-                decoration: _inputDecoration('Enter your name'),
-              ),
-              const SizedBox(height: 16),
+
+              const SizedBox(height: 32),
+
               Text('Email', style: context.semiBold14TextMain),
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration('Enter your email'),
+                decoration: _inputDecoration('admin@doctorhunt.com'),
               ),
+
               const SizedBox(height: 16),
+
               Text('Password', style: context.semiBold14TextMain),
               const SizedBox(height: 8),
               TextField(
@@ -134,54 +137,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 24),
 
-              // زرار Sign up - بيعرض دائرة تحميل أثناء الاتصال بـ Firebase
               _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                   : CustomButton(
-                      text: 'Sign up',
-                      onPressed: _onSignUpPressed,
+                      text: 'Login',
+                      onPressed: _onLoginPressed,
                     ),
 
               const SizedBox(height: 16),
+
+              // ملاحظة أمان بسيطة تحت الزرار (بدون رابط Register)
               Center(
-                child: TextButton(
-                  onPressed: () {
-                    context.go('/login');
-                  },
-                  child: RichText(
-                    text: TextSpan(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.lock_outline, size: 14, color: AppColors.textSub),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Secure admin access only',
                       style: context.regular12TextSub,
-                      children: [
-                        const TextSpan(text: 'Have an account? '),
-                        TextSpan(
-                          text: 'Login',
-                          style: context.bold12Primary,
-                        ),
-                      ],
                     ),
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialButton(String label, IconData icon) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: Icon(icon, size: 20),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        side: const BorderSide(color: AppColors.textBorders),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
         ),
       ),
     );

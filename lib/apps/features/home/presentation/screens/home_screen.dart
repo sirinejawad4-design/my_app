@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 
@@ -28,7 +29,10 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Hi there,', style: context.regular14White),
+                    Text(
+  'Hi ${FirebaseAuth.instance.currentUser?.email?.split('@').first ?? 'there'},',
+  style: context.regular14White,
+),
                     const SizedBox(height: 4),
                     Text('Find Your Doctor', style: context.bold22White),
                     const SizedBox(height: 16),
