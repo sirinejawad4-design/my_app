@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:my_app/apps/features/auth/data/repositories/auth_repository.dart';
+
 import 'package:my_app/apps/features/auth/logic/cubit/auth_cubit.dart';
 import 'package:my_app/apps/features/auth/logic/cubit/auth_state.dart';
+
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -20,31 +21,26 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  late final AuthCubit _authCubit;
-
-  @override
-  void initState() {
-    super.initState();
-    _authCubit = AuthCubit(AuthRepository());
-  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _authCubit.close();
     super.dispose();
   }
 
   Future<void> _onLoginPressed() async {
-    await _authCubit.login(
+    final authCubit = context.read<AuthCubit>();
+
+    await authCubit.login(
       email: _emailController.text,
       password: _passwordController.text,
     );
 
     if (!mounted) return;
 
-    final state = _authCubit.state;
+    final state = authCubit.state;
+
     if (state.isSuccess) {
       context.go('/doctors-list');
       return;
@@ -53,7 +49,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     if (state.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(state.errorMessage!, style: context.regular12White),
+          content: Text(
+            state.errorMessage!,
+            style: context.regular12White,
+          ),
           backgroundColor: AppColors.danger,
         ),
       );
@@ -62,14 +61,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _authCubit,
-      child: Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
-        leading: const BackButton(color: AppColors.black),
+        leading: const BackButton(
+          color: AppColors.black,
+        ),
       ),
       body: SafeArea(
         child: Padding(
@@ -79,7 +78,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // اللوغو بالنص
               Center(
                 child: Column(
                   children: [
@@ -89,7 +87,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       color: AppColors.primary,
                     ),
                     const SizedBox(height: 16),
-                    Text('Welcome Back!', style: context.bold22TextMain),
+                    Text(
+                      'Welcome Back!',
+                      style: context.bold22TextMain,
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       'Login to your admin account',
@@ -101,25 +102,41 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
               const SizedBox(height: 32),
 
-              Text('Email', style: context.semiBold14TextMain),
+              Text(
+                'Email',
+                style: context.semiBold14TextMain,
+              ),
+
               const SizedBox(height: 8),
+
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration('admin@doctorhunt.com'),
+                decoration: _inputDecoration(
+                  'admin@doctorhunt.com',
+                ),
               ),
 
               const SizedBox(height: 16),
 
-              Text('Password', style: context.semiBold14TextMain),
+              Text(
+                'Password',
+                style: context.semiBold14TextMain,
+              ),
+
               const SizedBox(height: 8),
+
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration('Enter your password').copyWith(
+                decoration: _inputDecoration(
+                  'Enter your password',
+                ).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.textSub,
                     ),
                     onPressed: () {
@@ -135,23 +152,32 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
               BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, state) {
-                  return state.isLoading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                      : CustomButton(
-                          text: 'Login',
-                          onPressed: _onLoginPressed,
-                        );
+                  if (state.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
+                  }
+
+                  return CustomButton(
+                    text: 'Login',
+                    onPressed: _onLoginPressed,
+                  );
                 },
               ),
 
               const SizedBox(height: 16),
 
-              // ملاحظة أمان بسيطة تحت الزرار (بدون رابط Register)
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.lock_outline, size: 14, color: AppColors.textSub),
+                    const Icon(
+                      Icons.lock_outline,
+                      size: 14,
+                      color: AppColors.textSub,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Secure admin access only',
@@ -163,7 +189,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             ],
           ),
         ),
-      ),
       ),
     );
   }
@@ -177,7 +202,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
     );
   }
 }

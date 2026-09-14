@@ -117,15 +117,6 @@ class ResetPasswordRoute extends GoRouteData
   }
 }
 
-@TypedGoRoute<AdminLoginRoute>(path: '/admin-login')
-class AdminLoginRoute extends GoRouteData with $AdminLoginRoute {
-  const AdminLoginRoute();
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return const AdminLoginScreen();
-  }
-}
 
 @TypedGoRoute<HomeRoute>(path: '/home')
 class HomeRoute extends GoRouteData with $HomeRoute {
@@ -200,7 +191,18 @@ class CreateDoctorRoute extends GoRouteData with $CreateDoctorRoute {
     return const CreateDoctorScreen();
   }
 }
+@TypedGoRoute<AdminLoginRoute>(path: '/admin-login')
+class AdminLoginRoute extends GoRouteData with $AdminLoginRoute {
+  const AdminLoginRoute();
 
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return BlocProvider(
+      create: (_) => AuthCubit(AuthRepository()),
+      child: const AdminLoginScreen(),
+    );
+  }
+}
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/',
