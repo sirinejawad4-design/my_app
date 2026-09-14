@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/repositories/home_repository.dart';
+import '../../logic/cubit/home_cubit.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 
@@ -9,9 +11,13 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocProvider(
+      create: (_) => HomeCubit(HomeRepository()),
+      child: Scaffold(
       backgroundColor: AppColors.white,
-      body: SafeArea(
+      body: BlocBuilder<HomeCubit, String>(
+        builder: (context, userName) {
+          return SafeArea(
         child: SingleChildScrollView(//btkhli scrren kela kabile la nshba la foe w tht
           child: Column(//btrtb kl parts foe baad
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,7 +36,7 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-  'Hi ${FirebaseAuth.instance.currentUser?.email?.split('@').first ?? 'there'},',
+  'Hi $userName,',
   style: context.regular14White,
 ),
                     const SizedBox(height: 4),
@@ -177,6 +183,9 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
             ],
           ),
         ),
+          );
+        },
+        ),
       ),
     );
   }
@@ -260,6 +269,7 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
     );
   }
 
+  
   Widget _buildCategoryListTile(
     BuildContext context, {
     required String name,
@@ -273,27 +283,47 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
           const CircleAvatar(
             radius: 26,
             backgroundColor: AppColors.grey100,
-            child: Icon(Icons.person, color: AppColors.textSub),
+            child: Icon(
+              Icons.person,
+              color: AppColors.textSub,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: context.semiBold14TextMain),
-                Text(specialty, style: context.regular12TextSub),
+                Text(
+                  name,
+                  style: context.semiBold14TextMain,
+                ),
+                Text(
+                  specialty,
+                  style: context.regular12TextSub,
+                ),
               ],
             ),
           ),
           Row(
             children: [
-              const Icon(Icons.star, size: 14, color: AppColors.warning),
+              const Icon(
+                Icons.star,
+                size: 14,
+                color: AppColors.warning,
+              ),
               const SizedBox(width: 2),
-              Text('$rating', style: context.regular12TextSub),
+              Text(
+                '$rating',
+                style: context.regular12TextSub,
+              ),
             ],
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.favorite_border, color: AppColors.danger, size: 20),
+          const Icon(
+            Icons.favorite_border,
+            color: AppColors.danger,
+            size: 20,
+          ),
         ],
       ),
     );

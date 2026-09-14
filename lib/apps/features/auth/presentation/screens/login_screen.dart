@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../logic/cubit/auth_cubit.dart';
+import '../../logic/cubit/auth_state.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -17,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -27,46 +29,32 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _onLoginPressed() async {
-    setState(() {
-      _isLoading = true;
-    });
+    final authCubit = context.read<AuthCubit>();
 
-    try {
-      // تسجيل دخول فعلي بـ Firebase
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+    await authCubit.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
 
-      if (mounted) {
-        context.go('/home');
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = 'Something went wrong. Please try again.';
-      if (e.code == 'user-not-found') {
-        message = 'No account found with this email.';
-      } else if (e.code == 'wrong-password') {
-        message = 'Incorrect password.';
-      } else if (e.code == 'invalid-email') {
-        message = 'Please enter a valid email.';
-      } else if (e.code == 'invalid-credential') {
-        message = 'Incorrect email or password.';
-      }
+    if (!mounted) return;
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message, style: context.regular12White),
-            backgroundColor: AppColors.danger,
+    final state = authCubit.state;
+
+    if (state.isSuccess) {
+      context.go('/home');
+      return;
+    }
+
+    if (state.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            state.errorMessage!,
+            style: context.regular12White,
           ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+          backgroundColor: AppColors.danger,
+        ),
+      );
     }
   }
 
@@ -81,41 +69,76 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 60),
+
               Text(
                 'Welcome back',
                 style: context.bold24TextMain,
               ),
+
               const SizedBox(height: 8),
+
               Text(
                 'Login to continue finding trusted doctors and booking appointments',
                 style: context.regular12TextSub,
               ),
+
               const SizedBox(height: 24),
+
               Row(
                 children: [
-                  Expanded(child: _buildSocialButton('Google', Icons.g_mobiledata)),
+                  Expanded(
+                    child: _buildSocialButton(
+                      'Google',
+                      Icons.g_mobiledata,
+                    ),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildSocialButton('Facebook', Icons.facebook)),
+                  Expanded(
+                    child: _buildSocialButton(
+                      'Facebook',
+                      Icons.facebook,
+                    ),
+                  ),
                 ],
               ),
+
               const SizedBox(height: 24),
-              Text('Email', style: context.semiBold14TextMain),
+
+              Text(
+                'Email',
+                style: context.semiBold14TextMain,
+              ),
+
               const SizedBox(height: 8),
+
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration('Enter your email'),
+                decoration: _inputDecoration(
+                  'Enter your email',
+                ),
               ),
+
               const SizedBox(height: 16),
-              Text('Password', style: context.semiBold14TextMain),
+
+              Text(
+                'Password',
+                style: context.semiBold14TextMain,
+              ),
+
               const SizedBox(height: 8),
+
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration('Enter your password').copyWith(
+                decoration: _inputDecoration(
+                  'Enter your password',
+                ).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.textSub,
                     ),
                     onPressed: () {
@@ -126,16 +149,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 24),
 
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : CustomButton(
-                      text: 'Login',
-                      onPressed: _onLoginPressed,
-                    ),
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  if (state.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
+                  }
+
+                  return CustomButton(
+                    text: 'Login',
+                    onPressed: _onLoginPressed,
+                  );
+                },
+              ),
 
               const SizedBox(height: 12),
+
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -147,7 +182,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 8),
+
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -157,7 +194,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     text: TextSpan(
                       style: context.regular12TextSub,
                       children: [
-                        const TextSpan(text: "Don't have an account? "),
+                        const TextSpan(
+                          text: "Don't have an account? ",
+                        ),
                         TextSpan(
                           text: 'Join us',
                           style: context.bold12Primary,
@@ -167,6 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 24),
             ],
           ),
@@ -175,14 +215,22 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSocialButton(String label, IconData icon) {
+  Widget _buildSocialButton(
+    String label,
+    IconData icon,
+  ) {
     return OutlinedButton.icon(
       onPressed: () {},
-      icon: Icon(icon, size: 20),
+      icon: Icon(
+        icon,
+        size: 20,
+      ),
       label: Text(label),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        side: const BorderSide(color: AppColors.textBorders),
+        side: const BorderSide(
+          color: AppColors.textBorders,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -199,7 +247,10 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
     );
   }
 }

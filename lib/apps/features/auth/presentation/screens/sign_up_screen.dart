@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../logic/cubit/auth_cubit.dart';
+import '../../logic/cubit/auth_state.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -18,7 +21,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoading = false; // لعرض دائرة تحميل أثناء الاتصال بـ Firebase
 
   @override
   void dispose() {
@@ -29,45 +31,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> _onSignUpPressed() async {
-    setState(() {
-      _isLoading = true;
-    });
+    final authCubit = context.read<AuthCubit>();
 
-    try {
-      // إنشاء حساب جديد فعلياً بـ Firebase
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+    await authCubit.signUp(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
 
-      if (mounted) {
-        context.go('/home');
-      }
-    } on FirebaseAuthException catch (e) {
-      // رسائل خطأ واضحة حسب نوع المشكلة
-      String message = 'Something went wrong. Please try again.';
-      if (e.code == 'email-already-in-use') {
-        message = 'This email is already registered.';
-      } else if (e.code == 'weak-password') {
-        message = 'Password is too weak.';
-      } else if (e.code == 'invalid-email') {
-        message = 'Please enter a valid email.';
-      }
+    if (!mounted) return;
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message, style: context.regular12White),
-            backgroundColor: AppColors.danger,
+    final state = authCubit.state;
+
+    if (state.isSuccess) {
+      context.go('/home');
+      return;
+    }
+
+    if (state.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            state.errorMessage!,
+            style: context.regular12White,
           ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+          backgroundColor: AppColors.danger,
+        ),
+      );
     }
   }
 
@@ -82,48 +71,88 @@ class _SignUpScreenState extends State<SignUpScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
+
               Text(
                 'Join us to start searching',
                 style: context.bold24TextMain,
               ),
+
               const SizedBox(height: 8),
+
               Text(
                 'You can search doctors, book appointments and find trusted care',
                 style: context.regular12TextSub,
               ),
+
               const SizedBox(height: 24),
+
               Row(
                 children: [
-                  Expanded(child: _buildSocialButton('Google', Icons.g_mobiledata)),
+                  Expanded(
+                    child: _buildSocialButton(
+                      'Google',
+                      Icons.g_mobiledata,
+                    ),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildSocialButton('Facebook', Icons.facebook)),
+                  Expanded(
+                    child: _buildSocialButton(
+                      'Facebook',
+                      Icons.facebook,
+                    ),
+                  ),
                 ],
               ),
+
               const SizedBox(height: 24),
-              Text('Name', style: context.semiBold14TextMain),
+
+              Text(
+                'Name',
+                style: context.semiBold14TextMain,
+              ),
+
               const SizedBox(height: 8),
+
               TextField(
                 controller: _nameController,
                 decoration: _inputDecoration('Enter your name'),
               ),
+
               const SizedBox(height: 16),
-              Text('Email', style: context.semiBold14TextMain),
+
+              Text(
+                'Email',
+                style: context.semiBold14TextMain,
+              ),
+
               const SizedBox(height: 8),
+
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: _inputDecoration('Enter your email'),
               ),
+
               const SizedBox(height: 16),
-              Text('Password', style: context.semiBold14TextMain),
+
+              Text(
+                'Password',
+                style: context.semiBold14TextMain,
+              ),
+
               const SizedBox(height: 8),
+
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration('Enter your password').copyWith(
+                decoration: _inputDecoration(
+                  'Enter your password',
+                ).copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: AppColors.textSub,
                     ),
                     onPressed: () {
@@ -134,17 +163,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 24),
 
-              // زرار Sign up - بيعرض دائرة تحميل أثناء الاتصال بـ Firebase
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : CustomButton(
-                      text: 'Sign up',
-                      onPressed: _onSignUpPressed,
-                    ),
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  if (state.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
+                  }
+
+                  return CustomButton(
+                    text: 'Sign up',
+                    onPressed: _onSignUpPressed,
+                  );
+                },
+              ),
 
               const SizedBox(height: 16),
+
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -154,7 +194,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     text: TextSpan(
                       style: context.regular12TextSub,
                       children: [
-                        const TextSpan(text: 'Have an account? '),
+                        const TextSpan(
+                          text: 'Have an account? ',
+                        ),
                         TextSpan(
                           text: 'Login',
                           style: context.bold12Primary,
@@ -164,6 +206,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 24),
             ],
           ),
@@ -172,14 +215,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildSocialButton(String label, IconData icon) {
+  Widget _buildSocialButton(
+    String label,
+    IconData icon,
+  ) {
     return OutlinedButton.icon(
       onPressed: () {},
-      icon: Icon(icon, size: 20),
+      icon: Icon(
+        icon,
+        size: 20,
+      ),
       label: Text(label),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        side: const BorderSide(color: AppColors.textBorders),
+        side: const BorderSide(
+          color: AppColors.textBorders,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -196,7 +247,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
     );
   }
 }

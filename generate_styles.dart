@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'lib/generated/app_colors.dart';
 
 void main() {
   final List<String> colors = [

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_app/apps/features/auth/data/repositories/auth_repository.dart';
+import 'package:my_app/apps/features/auth/logic/cubit/auth_cubit.dart';
+import 'package:my_app/apps/features/auth/logic/cubit/auth_state.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -17,61 +20,51 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _isLoading = false;
+  late final AuthCubit _authCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _authCubit = AuthCubit(AuthRepository());
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _authCubit.close();
     super.dispose();
   }
 
   Future<void> _onLoginPressed() async {
-    setState(() {
-      _isLoading = true;
-    });
+    await _authCubit.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
 
-    try {
-      // تسجيل دخول الأدمن بنفس نظام Firebase Auth
-      // ملاحظة: حساب الأدمن مسجّل مسبقاً بـ Firebase (مافي Sign Up للأدمن)
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+    if (!mounted) return;
+
+    final state = _authCubit.state;
+    if (state.isSuccess) {
+      context.go('/doctors-list');
+      return;
+    }
+
+    if (state.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.errorMessage!, style: context.regular12White),
+          backgroundColor: AppColors.danger,
+        ),
       );
-
-      if (mounted) {
-        context.go('/doctors-list');
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = 'Something went wrong. Please try again.';
-      if (e.code == 'user-not-found') {
-        message = 'No admin account found with this email.';
-      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
-        message = 'Incorrect email or password.';
-      } else if (e.code == 'invalid-email') {
-        message = 'Please enter a valid email.';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message, style: context.regular12White),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocProvider.value(
+      value: _authCubit,
+      child: Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
         backgroundColor: AppColors.white,
@@ -140,12 +133,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
               const SizedBox(height: 24),
 
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : CustomButton(
-                      text: 'Login',
-                      onPressed: _onLoginPressed,
-                    ),
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  return state.isLoading
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                      : CustomButton(
+                          text: 'Login',
+                          onPressed: _onLoginPressed,
+                        );
+                },
+              ),
 
               const SizedBox(height: 16),
 
@@ -166,6 +163,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

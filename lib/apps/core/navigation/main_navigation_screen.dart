@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../../generated/app_colors.dart';
-import 'home_screen.dart';
-import 'favourites_screen.dart';
+import 'package:my_app/generated/app_colors.dart';
+import 'package:my_app/apps/features/home/presentation/screens/home_screen.dart';
+import 'package:my_app/apps/features/favourites/presentation/screens/favourites_screen.dart';
 //fi charit tankol(home fav appointment mess)juwtu contnt bytghyr hasab aya tab f2st
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});

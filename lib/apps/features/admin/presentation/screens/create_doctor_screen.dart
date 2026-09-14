@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../logic/cubit/doctor_cubit.dart';
+import '../../logic/cubit/doctor_state.dart';
+import '../../data/repositories/doctor_repository.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -29,11 +31,18 @@ class _CreateDoctorScreenState extends State<CreateDoctorScreen> {
   String? _selectedSpecialty;
 
   File? _selectedImage;
-  bool _isSaving = false;
+  late final DoctorCubit _doctorCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _doctorCubit = DoctorCubit(DoctorRepository());
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _doctorCubit.close();
     super.dispose();
   }
 
@@ -53,7 +62,6 @@ class _CreateDoctorScreenState extends State<CreateDoctorScreen> {
   }
 
   Future<void> _onCreateDoctorPressed() async {
-    
     if (_nameController.text.trim().isEmpty || _selectedSpecialty == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -67,68 +75,43 @@ class _CreateDoctorScreenState extends State<CreateDoctorScreen> {
       return;
     }
 
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      String imageUrl = '';
-
-      
-      if (_selectedImage != null) {
-        final String fileName =
-            'doctors/${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final Reference storageRef =
-            FirebaseStorage.instance.ref().child(fileName);
-
-        await storageRef.putFile(_selectedImage!);
-        imageUrl = await storageRef.getDownloadURL();
-      }
-
-      
-      await FirebaseFirestore.instance.collection('doctors').add({
-        'name': _nameController.text.trim(),
-        'specialty': _selectedSpecialty,
-        'imageUrl': imageUrl,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Doctor added successfully',
-              style: context.regular12White,
-            ),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to add doctor. Please try again.',
-              style: context.regular12White,
-            ),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
+    await _doctorCubit.addDoctor(
+      name: _nameController.text,
+      specialty: _selectedSpecialty!,
+      image: _selectedImage,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocProvider.value(
+      value: _doctorCubit,
+      child: BlocListener<DoctorCubit, DoctorState>(
+        listener: (context, state) {
+          if (state.saveSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Doctor added successfully',
+                  style: context.regular12White,
+                ),
+                backgroundColor: AppColors.success,
+              ),
+            );
+            context.pop();
+          } else if (state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.errorMessage!,
+                  style: context.regular12White,
+                ),
+                backgroundColor: AppColors.danger,
+              ),
+            );
+          }
+        },
+        child: Scaffold(
       backgroundColor: AppColors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
@@ -243,15 +226,21 @@ class _CreateDoctorScreenState extends State<CreateDoctorScreen> {
 
             const SizedBox(height: 32),
 
-            _isSaving
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : CustomButton(
-                    text: 'Create Doctor',
-                    onPressed: _onCreateDoctorPressed,
-                  ),
+            BlocBuilder<DoctorCubit, DoctorState>(
+              builder: (context, state) {
+                return state.isSaving
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : CustomButton(
+                        text: 'Create Doctor',
+                        onPressed: _onCreateDoctorPressed,
+                      );
+              },
+            ),
 
             const SizedBox(height: 24),
           ],
+        ),
+      ),
         ),
       ),
     );
