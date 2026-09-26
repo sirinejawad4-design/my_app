@@ -85,7 +85,7 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
                   scrollDirection: Axis.horizontal,//khliya tethrak yamin chmel
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: 3,//kareru 3 marat
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),//elfasl 12 pixel bynton
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),//elfasl 12 pixel bynton
                   itemBuilder: (context, index) => Container(//kalb nafsu yani chkl kl 3nsor yaani de2ira green bi icunet tchghil
                     width: 90,
                     decoration: BoxDecoration(
@@ -125,7 +125,7 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: 3,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (context, index) => _buildDoctorCard(
                     context,
                     name: 'Dr. Fillerup Grab',
@@ -143,7 +143,7 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
                 physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: 3,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) => _buildCategoryListTile(
                   context,
                   name: 'Dr. Pediatrician',
@@ -161,7 +161,7 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: 3,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (context, index) => GestureDetector(
                     onTap: () => context.push('/doctor-details'),
                     child: Column(
@@ -212,7 +212,7 @@ class HomeScreen extends StatelessWidget {//statewidget hon m fi aya value btetg
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Icon(icon, color: color),

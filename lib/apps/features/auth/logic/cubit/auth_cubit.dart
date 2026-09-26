@@ -1,13 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../data/repositories/auth_repository.dart';
+
+import '../../data/repositories/auth_repository_impl.dart';
+import '../../domain/usecases/login_use_case.dart';
+import '../../domain/usecases/sign_up_use_case.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  final AuthRepository _repository;
+  final LoginUseCase _loginUseCase;
+  final SignUpUseCase _signUpUseCase;
 
-  AuthCubit(this._repository) : super(const AuthState());
+  AuthCubit({
+  required this._loginUseCase,
+  required this._signUpUseCase,
+}) : super(const AuthState());
 
   Future<void> login({
     required String email,
@@ -16,18 +22,17 @@ class AuthCubit extends Cubit<AuthState> {
     emit(const AuthState(isLoading: true));
 
     try {
-      debugPrint('EMAIL = "${email.trim()}"');
-      debugPrint('PASSWORD EMPTY = ${password.trim().isEmpty}');
-      await _repository.login(email: email, password: password);
+      await _loginUseCase(
+        email: email,
+        password: password,
+      );
+
       emit(const AuthState(isSuccess: true));
     } on AuthRepositoryException catch (e) {
       emit(AuthState(errorMessage: e.message));
     } on FirebaseAuthException catch (e) {
-      debugPrint('FIREBASE ERROR CODE: ${e.code}');
-      debugPrint('FIREBASE ERROR MESSAGE: ${e.message}');
       emit(AuthState(errorMessage: _messageForAuthError(e)));
-    } catch (e) {
-      debugPrint('AUTH ERROR: $e');
+    } catch (_) {
       emit(const AuthState(
         errorMessage: 'Something went wrong. Please try again.',
       ));
@@ -35,20 +40,25 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signUp({
+    required String name,
     required String email,
     required String password,
   }) async {
     emit(const AuthState(isLoading: true));
 
     try {
-      await _repository.signUp(email: email, password: password);
+      await _signUpUseCase(
+        name: name,
+        email: email,
+        password: password,
+      );
+
       emit(const AuthState(isSuccess: true));
     } on AuthRepositoryException catch (e) {
       emit(AuthState(errorMessage: e.message));
     } on FirebaseAuthException catch (e) {
       emit(AuthState(errorMessage: _messageForAuthError(e)));
-    } catch (e) {
-      debugPrint('AUTH ERROR: $e');
+    } catch (_) {
       emit(const AuthState(
         errorMessage: 'Something went wrong. Please try again.',
       ));

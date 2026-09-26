@@ -16,9 +16,14 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController =
+      TextEditingController();
+
+  final TextEditingController _emailController =
+      TextEditingController();
+
+  final TextEditingController _passwordController =
+      TextEditingController();
 
   bool _obscurePassword = true;
 
@@ -34,6 +39,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final authCubit = context.read<AuthCubit>();
 
     await authCubit.signUp(
+      name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
     );

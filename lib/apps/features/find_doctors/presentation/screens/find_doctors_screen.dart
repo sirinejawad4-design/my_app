@@ -87,7 +87,7 @@ class _FindDoctorsScreenState extends State<FindDoctorsScreen> {
             Expanded(
               child: ListView.separated(
                 itemCount: _doctors.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final doctor = _doctors[index];
                   return _buildDoctorListCard(

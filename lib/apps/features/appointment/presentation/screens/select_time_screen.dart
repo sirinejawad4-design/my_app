@@ -135,7 +135,7 @@ class _SelectTimeScreenState extends State<SelectTimeScreen> {
                   shape: BoxShape.circle,
                 ),
                 todayDecoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
                 defaultTextStyle: context.regular14TextMain,

@@ -104,7 +104,7 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
           ),
           borderRadius: BorderRadius.circular(12),
           color: isSelected
-              ? AppColors.primary.withOpacity(0.05)
+              ? AppColors.primary.withValues(alpha: 0.05)
               : AppColors.white,
         ),
         child: Row(

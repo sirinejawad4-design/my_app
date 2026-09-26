@@ -6,7 +6,9 @@ import '../../features/onboarding/presentation/screens/splash_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../../features/onboarding/presentation/screens/choose_role_screen.dart';
 
-import '../../features/auth/data/repositories/auth_repository.dart';
+import '../../features/auth/data/repositories/auth_repository_impl.dart';
+import '../../features/auth/domain/usecases/login_use_case.dart';
+import '../../features/auth/domain/usecases/sign_up_use_case.dart';
 import '../../features/auth/logic/cubit/auth_cubit.dart';
 
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
@@ -66,7 +68,14 @@ class SignUpRoute extends GoRouteData with $SignUpRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return BlocProvider(
-      create: (_) => AuthCubit(AuthRepository()),
+      create: (_) {
+        final repository = AuthRepositoryImpl();
+
+        return AuthCubit(
+          loginUseCase: LoginUseCase(repository),
+          signUpUseCase: SignUpUseCase(repository),
+        );
+      },
       child: const SignUpScreen(),
     );
   }
@@ -79,7 +88,14 @@ class LoginRoute extends GoRouteData with $LoginRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return BlocProvider(
-      create: (_) => AuthCubit(AuthRepository()),
+      create: (_) {
+        final repository = AuthRepositoryImpl();
+
+        return AuthCubit(
+          loginUseCase: LoginUseCase(repository),
+          signUpUseCase: SignUpUseCase(repository),
+        );
+      },
       child: const LoginScreen(),
     );
   }
@@ -116,7 +132,6 @@ class ResetPasswordRoute extends GoRouteData
     return const ResetPasswordScreen();
   }
 }
-
 
 @TypedGoRoute<HomeRoute>(path: '/home')
 class HomeRoute extends GoRouteData with $HomeRoute {
@@ -158,7 +173,6 @@ class SelectTimeRoute extends GoRouteData with $SelectTimeRoute {
     return const SelectTimeScreen();
   }
 }
-
 @TypedGoRoute<AppointmentSuccessRoute>(
   path: '/appointment-success',
 )
@@ -191,6 +205,7 @@ class CreateDoctorRoute extends GoRouteData with $CreateDoctorRoute {
     return const CreateDoctorScreen();
   }
 }
+
 @TypedGoRoute<AdminLoginRoute>(path: '/admin-login')
 class AdminLoginRoute extends GoRouteData with $AdminLoginRoute {
   const AdminLoginRoute();
@@ -198,11 +213,19 @@ class AdminLoginRoute extends GoRouteData with $AdminLoginRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return BlocProvider(
-      create: (_) => AuthCubit(AuthRepository()),
+      create: (_) {
+        final repository = AuthRepositoryImpl();
+
+        return AuthCubit(
+          loginUseCase: LoginUseCase(repository),
+          signUpUseCase: SignUpUseCase(repository),
+        );
+      },
       child: const AdminLoginScreen(),
     );
   }
 }
+
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/',
