@@ -17,4 +17,4 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 ## 🎥 Project Demo
 
-[▶️ Watch Doctor Hunt Demo](demo/Doctorhunt%281%29.mp4)
+https://github.com/user-attachments/assets/22ef4c09-6bf6-4300-baf8-62b6d9fd209d
