@@ -4,7 +4,7 @@ class AuthRepository {
   final FirebaseAuth _firebaseAuth;
 
   AuthRepository({FirebaseAuth? firebaseAuth})
-      : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+    : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   Future<UserCredential> login({
     required String email,

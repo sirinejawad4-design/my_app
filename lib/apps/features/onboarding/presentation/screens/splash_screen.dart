@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 
@@ -14,11 +18,31 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        context.go('/onboarding');
-      }
-    });
+    _navigateFromSplash();
+  }
+
+  Future<void> _navigateFromSplash() async {
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Always show onboarding when the app starts.
+      await prefs.setBool('onboarding_completed', false);
+
+      if (!mounted) return;
+
+      context.go('/onboarding');
+    } catch (error, stackTrace) {
+      debugPrint('Splash navigation error: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      context.go('/onboarding');
+    }
   }
 
   @override

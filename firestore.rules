@@ -1,0 +1,369 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Authentication helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function userExists(userId) {
+      return exists(
+        /databases/$(database)/documents/users/$(userId)
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && userExists(request.auth.uid)
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
+    }
+
+    // =========================
+    // USERS
+    // =========================
+    match /users/{userId} {
+  allow read: if isSignedIn()
+    && (request.auth.uid == userId || isAdmin());
+
+  allow create: if isSignedIn()
+    && request.auth.uid == userId
+    && request.resource.data.id == userId
+    && request.resource.data.role == 'patient';
+
+  allow update: if isSignedIn()
+  && request.auth.uid == userId
+  && request.resource.data.role == resource.data.role
+  && request.resource.data.diff(resource.data)
+    .affectedKeys()
+    .hasOnly([
+      'name',
+      'phone',
+      'photoUrl',
+      'dateOfBirth',
+      'gender',
+      'updatedAt'
+    ]);
+      
+
+  allow delete: if isAdmin();
+}
+
+
+      // Favorites
+      match /favorites/{doctorId} {
+        allow read, create, delete: if isOwner(userId);
+        allow update: if false;
+      }
+    }
+
+    // =========================
+    // DOCTORS
+    // =========================
+   // =========================
+    // DOCTORS
+    // =========================
+    match /doctors/{doctorId} {
+      allow read: if isSignedIn();
+
+      allow create, delete: if isAdmin();
+
+      allow update: if isAdmin()
+        || (
+          isSignedIn()
+          && request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasOnly([
+              'rating',
+              'reviewsCount',
+              'lastReviewId'
+            ])
+          && request.resource.data.lastReviewId is string
+          && request.resource.data.rating is number
+          && request.resource.data.rating >= 0
+          && request.resource.data.rating <= 5
+          && request.resource.data.reviewsCount is int
+          && request.resource.data.reviewsCount
+            == resource.data.reviewsCount + 1
+          && existsAfter(
+            /databases/$(database)/documents/reviews/$(request.resource.data.lastReviewId)
+          )
+          && getAfter(
+            /databases/$(database)/documents/reviews/$(request.resource.data.lastReviewId)
+          ).data.doctorId == doctorId
+          && getAfter(
+            /databases/$(database)/documents/reviews/$(request.resource.data.lastReviewId)
+          ).data.patientId == request.auth.uid
+          && getAfter(
+            /databases/$(database)/documents/reviews/$(request.resource.data.lastReviewId)
+          ).data.appointmentId == request.resource.data.lastReviewId
+          && request.resource.data.rating
+            == (
+              (
+                resource.data.rating * resource.data.reviewsCount
+                + getAfter(
+                  /databases/$(database)/documents/reviews/$(request.resource.data.lastReviewId)
+                ).data.rating
+              )
+              / request.resource.data.reviewsCount
+            )
+        );
+    }
+
+  
+    
+       
+
+    // =========================
+    // APPOINTMENTS
+    // =========================
+    match /appointments/{appointmentId} {
+      allow read: if isSignedIn()
+        && (
+          isAdmin()
+          || resource.data.userId == request.auth.uid
+        );
+
+      // Create appointment together with its booked slot.
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'upcoming'
+        && request.resource.data.slotId is string
+        && getAfter(
+          /databases/$(database)/documents/appointment_slots/$(request.resource.data.slotId)
+        ).data.status == 'booked'
+        && getAfter(
+          /databases/$(database)/documents/appointment_slots/$(request.resource.data.slotId)
+        ).data.appointmentId == appointmentId
+        && getAfter(
+          /databases/$(database)/documents/appointment_slots/$(request.resource.data.slotId)
+        ).data.userId == request.auth.uid
+        && getAfter(
+          /databases/$(database)/documents/appointment_slots/$(request.resource.data.slotId)
+        ).data.doctorId == request.resource.data.doctorId
+        && getAfter(
+          /databases/$(database)/documents/appointment_slots/$(request.resource.data.slotId)
+        ).data.date == request.resource.data.date
+        && getAfter(
+          /databases/$(database)/documents/appointment_slots/$(request.resource.data.slotId)
+        ).data.time == request.resource.data.time;
+
+      // Admin marks an upcoming appointment as completed.
+      allow update: if isAdmin()
+        && resource.data.status == 'upcoming'
+        && request.resource.data.status == 'completed'
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.doctorId == resource.data.doctorId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'completedAt'])
+        && request.resource.data.completedAt == request.time;
+
+      // Admin cancels an upcoming appointment.
+      allow update: if isAdmin()
+        && resource.data.status == 'upcoming'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.doctorId == resource.data.doctorId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'cancelledAt'])
+        && request.resource.data.cancelledAt == request.time
+        && (
+          !exists(
+            /databases/$(database)/documents/appointment_slots/$(resource.data.slotId)
+          )
+          || get(
+            /databases/$(database)/documents/appointment_slots/$(resource.data.slotId)
+          ).data.status != 'booked'
+          || getAfter(
+            /databases/$(database)/documents/appointment_slots/$(resource.data.slotId)
+          ).data.status == 'available'
+        );
+
+      // Patient cancels their own upcoming appointment.
+      allow update: if isOwner(resource.data.userId)
+        && resource.data.status == 'upcoming'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.doctorId == resource.data.doctorId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['status', 'cancelledAt'])
+        && request.resource.data.cancelledAt == request.time
+        && (
+          !exists(
+            /databases/$(database)/documents/appointment_slots/$(resource.data.slotId)
+          )
+          || get(
+            /databases/$(database)/documents/appointment_slots/$(resource.data.slotId)
+          ).data.status != 'booked'
+          || (
+            get(
+              /databases/$(database)/documents/appointment_slots/$(resource.data.slotId)
+            ).data.appointmentId == appointmentId
+            && getAfter(
+              /databases/$(database)/documents/appointment_slots/$(resource.data.slotId)
+            ).data.status == 'available'
+          )
+        );
+
+      // Patient rates a completed appointment once and creates its review.
+      allow update: if isOwner(resource.data.userId)
+        && resource.data.status == 'completed'
+        && resource.data.get('rated', false) == false
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(['rated', 'rating', 'ratedAt'])
+        && request.resource.data.rated == true
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.ratedAt == request.time
+        && existsAfter(
+          /databases/$(database)/documents/reviews/$(appointmentId)
+        )
+        && getAfter(
+          /databases/$(database)/documents/reviews/$(appointmentId)
+        ).data.appointmentId == appointmentId
+        && getAfter(
+          /databases/$(database)/documents/reviews/$(appointmentId)
+        ).data.patientId == request.auth.uid
+        && getAfter(
+          /databases/$(database)/documents/reviews/$(appointmentId)
+        ).data.doctorId == resource.data.doctorId
+        && getAfter(
+          /databases/$(database)/documents/reviews/$(appointmentId)
+        ).data.rating == request.resource.data.rating;
+    }
+       
+
+    // =========================
+    // APPOINTMENT SLOTS
+    // =========================
+    match /appointment_slots/{slotId} {
+      allow read: if isSignedIn();
+
+      // Create a booked slot with its appointment.
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'booked'
+        && request.resource.data.appointmentId is string
+        && getAfter(
+          /databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)
+        ).data.userId == request.auth.uid
+        && getAfter(
+          /databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)
+        ).data.slotId == slotId
+        && getAfter(
+          /databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)
+        ).data.status == 'upcoming';
+
+      allow update: if isSignedIn()
+        && (
+          // Release a slot when its appointment is cancelled.
+          (
+            resource.data.status == 'booked'
+            && request.resource.data.status == 'available'
+            && request.resource.data.diff(resource.data)
+              .affectedKeys()
+              .hasOnly(['status', 'appointmentId', 'userId'])
+            && !request.resource.data.keys()
+              .hasAny(['appointmentId', 'userId'])
+            && (
+              resource.data.userId == request.auth.uid
+              || isAdmin()
+            )
+            && getAfter(
+              /databases/$(database)/documents/appointments/$(resource.data.appointmentId)
+            ).data.status == 'cancelled'
+            && getAfter(
+              /databases/$(database)/documents/appointments/$(resource.data.appointmentId)
+            ).data.slotId == slotId
+          )
+
+          ||
+
+          // Book an available slot with its appointment.
+          (
+            resource.data.status == 'available'
+            && request.resource.data.status == 'booked'
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.appointmentId is string
+            && request.resource.data.doctorId == resource.data.doctorId
+            && request.resource.data.date == resource.data.date
+            && request.resource.data.time == resource.data.time
+            && getAfter(
+              /databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)
+            ).data.userId == request.auth.uid
+            && getAfter(
+              /databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)
+            ).data.slotId == slotId
+            && getAfter(
+              /databases/$(database)/documents/appointments/$(request.resource.data.appointmentId)
+            ).data.status == 'upcoming'
+          )
+        );
+
+      allow delete: if isAdmin();
+    }
+
+    // =========================
+    // REVIEWS
+    // =========================
+    match /reviews/{reviewId} {
+  allow read: if isSignedIn();
+
+  allow create: if isSignedIn()
+    && request.resource.data.patientId == request.auth.uid
+    && request.resource.data.appointmentId == reviewId
+    && request.resource.data.doctorId is string
+    && request.resource.data.rating is int
+    && request.resource.data.rating >= 1
+    && request.resource.data.rating <= 5
+    && exists(
+      /databases/$(database)/documents/appointments/$(reviewId)
+    )
+    && get(
+      /databases/$(database)/documents/appointments/$(reviewId)
+    ).data.userId == request.auth.uid
+    && get(
+      /databases/$(database)/documents/appointments/$(reviewId)
+    ).data.status == 'completed'
+    && get(
+      /databases/$(database)/documents/appointments/$(reviewId)
+    ).data.get('rated', false) == false
+    && getAfter(
+      /databases/$(database)/documents/appointments/$(reviewId)
+    ).data.rated == true
+    && getAfter(
+      /databases/$(database)/documents/appointments/$(reviewId)
+    ).data.rating == request.resource.data.rating
+    && getAfter(
+      /databases/$(database)/documents/appointments/$(reviewId)
+    ).data.doctorId == request.resource.data.doctorId;
+
+  allow update, delete: if false;
+}
+      
+
+    // =========================
+    // APP SETTINGS
+    // =========================
+    match /app_settings/{settingId} {
+      allow read: if isSignedIn()
+        && settingId == 'clinic';
+
+      allow write: if isAdmin();
+    }
+  }
+}

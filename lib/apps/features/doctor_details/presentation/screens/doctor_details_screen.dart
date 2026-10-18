@@ -1,21 +1,42 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../../../../generated/app_colors.dart';
-import '../../../../../generated/style_atoms.dart';
 import 'package:go_router/go_router.dart';
 
-class DoctorDetailsScreen extends StatelessWidget {
-  final String doctorName;
-  final String specialty;
-  final double rating;
-  final String price;
+import 'package:my_app/apps/features/admin/data/models/doctor.dart';
 
-  const DoctorDetailsScreen({
-    super.key,
-    this.doctorName = 'Dr. Pediatrician',
-    this.specialty = 'Specialist Cardiologist',
-    this.rating = 4.0,
-    this.price = '\$28.00/hr',
-  });
+import '../../../../../generated/app_colors.dart';
+import '../../../../../generated/style_atoms.dart';
+
+class DoctorDetailsScreen extends StatefulWidget {
+  final String doctorId;
+
+  const DoctorDetailsScreen({super.key, required this.doctorId});
+
+  @override
+  State<DoctorDetailsScreen> createState() => _DoctorDetailsScreenState();
+}
+
+class _DoctorDetailsScreenState extends State<DoctorDetailsScreen> {
+  late Future<Doctor?> _doctorFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _doctorFuture = _loadDoctor();
+  }
+
+  Future<Doctor?> _loadDoctor() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('doctors')
+        .doc(widget.doctorId)
+        .get();
+
+    if (!doc.exists || doc.data() == null) {
+      return null;
+    }
+
+    return Doctor.fromMap(doc.id, doc.data()!);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,182 +48,496 @@ class DoctorDetailsScreen extends StatelessWidget {
         leading: const BackButton(color: AppColors.black),
         title: Text('Doctor Details', style: context.bold16TextMain),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: AppColors.black),
-            onPressed: () {},
+      ),
+      body: FutureBuilder<Doctor?>(
+        future: _doctorFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return _buildError();
+          }
+
+          final doctor = snapshot.data;
+
+          if (doctor == null) {
+            return _buildNotFound();
+          }
+
+          return _buildDoctorDetails(context, doctor);
+        },
+      ),
+    );
+  }
+
+  Widget _buildDoctorDetails(BuildContext context, Doctor doctor) {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // DOCTOR CARD
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.grey100,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                _buildDoctorImage(doctor.imageUrl),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        doctor.name,
+                        style: context.semiBold16TextMain,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(doctor.specialty, style: context.regular12TextSub),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: AppColors.warning,
+                            size: 17,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            doctor.rating.toStringAsFixed(1),
+                            style: context.semiBold12TextMain,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '(${doctor.reviewsCount} reviews)',
+                            style: context.regular11TextSub,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '\$${doctor.fee.toStringAsFixed(0)} / visit',
+                        style: context.semiBold12TextMain,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // ABOUT DOCTOR
+          Text('About Doctor', style: context.bold16TextMain),
+          const SizedBox(height: 8),
+          Text(
+            'Book an appointment with ${doctor.name} '
+            'and get trusted medical care at our clinic.',
+            style: context.regular12TextSub,
+          ),
+
+          const SizedBox(height: 24),
+
+          // CENTRAL CLINIC LOCATION
+          Text('Clinic Location', style: context.bold16TextMain),
+          const SizedBox(height: 10),
+
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('app_settings')
+                .doc('clinic')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return _buildClinicLocationCard(
+                  clinicName: 'Central Clinic',
+                  clinicLocation: 'Could not load clinic location.',
+                );
+              }
+
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  !snapshot.hasData) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.grey100,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                );
+              }
+
+              final data = snapshot.data?.data() ?? {};
+
+              final clinicName = (data['clinicName'] as String?)?.trim();
+
+              final clinicLocation = (data['clinicLocation'] as String?)
+                  ?.trim();
+
+              return _buildClinicLocationCard(
+                clinicName: clinicName == null || clinicName.isEmpty
+                    ? 'Central Clinic'
+                    : clinicName,
+                clinicLocation: clinicLocation == null || clinicLocation.isEmpty
+                    ? 'Location not set'
+                    : clinicLocation,
+              );
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // REVIEWS
+          Text('Reviews', style: context.bold16TextMain),
+          const SizedBox(height: 10),
+
+          // RATING SUMMARY
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.grey100,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.star, color: AppColors.warning, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  doctor.rating.toStringAsFixed(1),
+                  style: context.bold18TextMain,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${doctor.reviewsCount} patient reviews',
+                    style: context.regular12TextSub,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // REAL REVIEWS FROM FIRESTORE
+          _ReviewsList(doctorId: doctor.id),
+
+          const SizedBox(height: 28),
+
+          // BOOK NOW
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: () {
+                context.push(
+                  '/select-time?doctorId=${Uri.encodeComponent(doctor.id)}',
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text('Book Now', style: context.semiBold16White),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Center(
+            child: Text(
+              'Consultation fee: '
+              '\$${doctor.fee.toStringAsFixed(0)}',
+              style: context.regular12TextSub,
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // كرت معلومات الدكتور الأساسية
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: AppColors.grey100,
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppColors.white,
-                    child: Icon(
-                      Icons.person,
-                      color: AppColors.textSub,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                doctorName,
-                                style: context.semiBold16TextMain,
-                              ),
-                            ),
-                            const Icon(
-                              Icons.favorite,
-                              color: AppColors.danger,
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                        Text(specialty, style: context.regular12TextSub),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            ...List.generate(
-                              5,
-                              (index) => Icon(
-                                index < rating.round()
-                                    ? Icons.star
-                                    : Icons.star_border,
-                                size: 14,
-                                color: AppColors.warning,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(price, style: context.semiBold12TextMain),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+    );
+  }
+
+  // CLINIC LOCATION CARD
+  Widget _buildClinicLocationCard({
+    required String clinicName,
+    required String clinicLocation,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.grey100,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
             ),
-
-            const SizedBox(height: 16),
-
-            
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: ElevatedButton(
-                onPressed: () => context.push('/select-time'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              
-                child: Text('Book Now', style: context.semiBold16White),
-              ),
+            child: const Icon(
+              Icons.location_on_outlined,
+              color: AppColors.primary,
             ),
-
-            const SizedBox(height: 24),
-
-            
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStat(context, '100', 'Rating'),
-                _buildStat(context, '500', 'Ongoing'),
-                _buildStat(context, '700', 'Patient'),
+                Text(clinicName, style: context.semiBold14TextMain),
+                const SizedBox(height: 4),
+                Text(clinicLocation, style: context.regular12TextSub),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            const SizedBox(height: 24),
+  // DOCTOR IMAGE
+  Widget _buildDoctorImage(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return Container(
+        width: 76,
+        height: 76,
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.person, color: AppColors.textSub, size: 42),
+      );
+    }
 
-           
-            Text('Services', style: context.bold16TextMain),
-            const SizedBox(height: 12),
-            _buildServiceItem(
-              context,
-              1,
-              'Patient care should be the number one priority',
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Image.network(
+        imageUrl,
+        width: 76,
+        height: 76,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 76,
+            height: 76,
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
-            _buildServiceItem(
-              context,
-              2,
-              'If you run your practice, you know how frustrating scheduling can be',
-            ),
-            _buildServiceItem(
-              context,
-              3,
-              "That's why some of appointment reminder system is used",
-            ),
+            child: const Icon(Icons.person, color: AppColors.textSub, size: 42),
+          );
+        },
+      ),
+    );
+  }
 
-            const SizedBox(height: 24),
-
-            Container(
-              width: double.infinity,
-              height: 160,
-              decoration: BoxDecoration(
-                color: AppColors.grey100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.map_outlined,
-                  color: AppColors.textSub,
-                  size: 48,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-          ],
+  // ERROR
+  Widget _buildError() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'Something went wrong.\nPlease try again.',
+          textAlign: TextAlign.center,
         ),
       ),
     );
   }
 
-  
-  Widget _buildStat(BuildContext context, String value, String label) {
-    return Column(
-      children: [
-        Text(value, style: context.bold18TextMain),
-        const SizedBox(height: 2),
-        Text(label, style: context.regular12TextSub),
-      ],
+  // DOCTOR NOT FOUND
+  Widget _buildNotFound() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text('Doctor not found.', textAlign: TextAlign.center),
+      ),
     );
   }
+}
 
-  // عنصر خدمة واحدة برقم مرقّم
-  Widget _buildServiceItem(BuildContext context, int number, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
+// REVIEWS LIST
+class _ReviewsList extends StatelessWidget {
+  final String doctorId;
+
+  const _ReviewsList({required this.doctorId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('reviews')
+          .where('doctorId', isEqualTo: doctorId)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.grey100,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Text('Could not load reviews.'),
+          );
+        }
+
+        final reviews = snapshot.data?.docs.toList() ?? [];
+
+        if (reviews.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.grey100,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              'No patient reviews yet.',
+              style: context.regular12TextSub,
+            ),
+          );
+        }
+
+        // Sort newest first.
+        reviews.sort((a, b) {
+          final aTime = a.data()['createdAt'] as Timestamp?;
+          final bTime = b.data()['createdAt'] as Timestamp?;
+
+          if (aTime == null && bTime == null) {
+            return 0;
+          }
+
+          if (aTime == null) {
+            return 1;
+          }
+
+          if (bTime == null) {
+            return -1;
+          }
+
+          return bTime.compareTo(aTime);
+        });
+
+        return Column(
+          children: reviews.map((reviewDoc) {
+            final review = reviewDoc.data();
+
+            final rating = (review['rating'] as num?)?.toInt() ?? 0;
+
+            final comment = review['comment'] as String? ?? '';
+
+            final createdAt = review['createdAt'] as Timestamp?;
+
+            return _ReviewCard(
+              rating: rating,
+              comment: comment,
+              createdAt: createdAt,
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}
+
+// REVIEW CARD
+class _ReviewCard extends StatelessWidget {
+  final int rating;
+  final String comment;
+  final Timestamp? createdAt;
+
+  const _ReviewCard({
+    required this.rating,
+    required this.comment,
+    required this.createdAt,
+  });
+
+  String _formatDate() {
+    if (createdAt == null) {
+      return '';
+    }
+
+    final date = createdAt!.toDate();
+
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+
+    return '$day/$month/$year';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.grey100,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$number.', style: context.semiBold14TextMain),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(text, style: context.regular12TextSub),
+          // STARS + DATE
+          Row(
+            children: [
+              Row(
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < rating ? Icons.star : Icons.star_border,
+                    color: AppColors.warning,
+                    size: 18,
+                  );
+                }),
+              ),
+              const Spacer(),
+              if (createdAt != null)
+                Text(_formatDate(), style: context.regular11TextSub),
+            ],
           ),
+
+          // COMMENT
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              comment,
+              style: context.regular12TextMain.copyWith(fontSize: 13),
+            ),
+          ],
         ],
       ),
     );

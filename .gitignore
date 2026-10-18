@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+node_modules/
+all_dart_files.txt
+clinic_location_files.txt
+dart_files.txt
+storage.rules.txt

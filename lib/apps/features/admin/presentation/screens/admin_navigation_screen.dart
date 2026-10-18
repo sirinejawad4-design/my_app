@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../../generated/app_colors.dart';
-import 'doctors_list_screen.dart';
 
+import '../../../../../generated/app_colors.dart';
+import 'admin_appointments_screen.dart';
+import 'doctors_list_screen.dart';
+import 'admin_settings_screen.dart';
 
 class AdminNavigationScreen extends StatefulWidget {
   const AdminNavigationScreen({super.key});
@@ -15,29 +17,43 @@ class _AdminNavigationScreenState extends State<AdminNavigationScreen> {
 
   final List<Widget> _screens = const [
     DoctorsListScreen(),
-    _AdminPlaceholderScreen(title: 'Settings'),
+    AdminAppointmentsScreen(),
+    AdminSettingsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
+
         onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
+
         selectedItemColor: AppColors.primary,
+
         unselectedItemColor: AppColors.textSub,
+
         type: BottomNavigationBarType.fixed,
+
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.people_outline),
             activeIcon: Icon(Icons.people),
             label: 'Doctors',
           ),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month_outlined),
+            activeIcon: Icon(Icons.calendar_month),
+            label: 'Appointments',
+          ),
+
           BottomNavigationBarItem(
             icon: Icon(Icons.settings_outlined),
             activeIcon: Icon(Icons.settings),
@@ -45,18 +61,6 @@ class _AdminNavigationScreenState extends State<AdminNavigationScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _AdminPlaceholderScreen extends StatelessWidget {
-  final String title;
-  const _AdminPlaceholderScreen({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('$title screen - coming soon'),
     );
   }
 }

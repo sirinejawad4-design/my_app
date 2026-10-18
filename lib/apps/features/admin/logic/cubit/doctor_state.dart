@@ -35,10 +35,10 @@ class DoctorState extends Equatable {
 
   @override
   List<Object?> get props => [
-        doctors,
-        isLoading,
-        isSaving,
-        saveSuccess,
-        errorMessage,
-      ];
+    doctors,
+    isLoading,
+    isSaving,
+    saveSuccess,
+    errorMessage,
+  ];
 }

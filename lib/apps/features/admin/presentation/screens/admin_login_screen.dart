@@ -8,6 +8,8 @@ import 'package:my_app/apps/features/auth/logic/cubit/auth_state.dart';
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -30,34 +32,85 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   }
 
   Future<void> _onLoginPressed() async {
-    final authCubit = context.read<AuthCubit>();
+  final authCubit = context.read<AuthCubit>();
 
-    await authCubit.login(
-      email: _emailController.text,
-      password: _passwordController.text,
-    );
+  await authCubit.login(
+    email: _emailController.text,
+    password: _passwordController.text,
+  );
 
-    if (!mounted) return;
+  if (!mounted) return;
 
-    final state = authCubit.state;
+  final state = authCubit.state;
 
-    if (state.isSuccess) {
-      context.go('/doctors-list');
-      return;
-    }
+  if (state.isSuccess) {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
 
-    if (state.errorMessage != null) {
+      if (user == null) {
+        throw Exception('Unable to verify your account.');
+      }
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!mounted) return;
+
+      final role = userDoc.data()?['role'];
+
+      if (userDoc.exists && role == 'admin') {
+        context.go('/doctors-list');
+        return;
+      }
+
+      // This account is not an admin.
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            state.errorMessage!,
+            'Access denied. This account is not an admin.',
             style: context.regular12White,
           ),
           backgroundColor: AppColors.danger,
         ),
       );
+      return;
+    } catch (e) {
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Could not verify admin access. Please try again.',
+            style: context.regular12White,
+          ),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
     }
   }
+
+  if (state.errorMessage != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          state.errorMessage!,
+          style: context.regular12White,
+        ),
+        backgroundColor: AppColors.danger,
+      ),
+    );
+  }
+}
+ 
 
   @override
   Widget build(BuildContext context) {
@@ -66,9 +119,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
-        leading: const BackButton(
-          color: AppColors.black,
-        ),
+        leading: const BackButton(color: AppColors.black),
       ),
       body: SafeArea(
         child: Padding(
@@ -87,10 +138,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                       color: AppColors.primary,
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'Welcome Back!',
-                      style: context.bold22TextMain,
-                    ),
+                    Text('Welcome Back!', style: context.bold22TextMain),
                     const SizedBox(height: 6),
                     Text(
                       'Login to your admin account',
@@ -102,36 +150,26 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
               const SizedBox(height: 32),
 
-              Text(
-                'Email',
-                style: context.semiBold14TextMain,
-              ),
+              Text('Email', style: context.semiBold14TextMain),
 
               const SizedBox(height: 8),
 
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration(
-                  'admin@doctorhunt.com',
-                ),
+                decoration: _inputDecoration('admin@doctorhunt.com'),
               ),
 
               const SizedBox(height: 16),
 
-              Text(
-                'Password',
-                style: context.semiBold14TextMain,
-              ),
+              Text('Password', style: context.semiBold14TextMain),
 
               const SizedBox(height: 8),
 
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration(
-                  'Enter your password',
-                ).copyWith(
+                decoration: _inputDecoration('Enter your password').copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -202,10 +240,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }

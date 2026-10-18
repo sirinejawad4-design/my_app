@@ -17,7 +17,9 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _nameController = TextEditingController();
+
   final TextEditingController _emailController = TextEditingController();
+
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
@@ -34,6 +36,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final authCubit = context.read<AuthCubit>();
 
     await authCubit.signUp(
+      name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
     );
@@ -50,10 +53,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (state.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            state.errorMessage!,
-            style: context.regular12White,
-          ),
+          content: Text(state.errorMessage!, style: context.regular12White),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onGoogleSignInPressed() async {
+    final authCubit = context.read<AuthCubit>();
+
+    await authCubit.signInWithGoogle();
+
+    if (!mounted) return;
+
+    final state = authCubit.state;
+
+    if (state.isSuccess) {
+      context.go('/home');
+      return;
+    }
+
+    if (state.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.errorMessage!, style: context.regular12White),
           backgroundColor: AppColors.danger,
         ),
       );
@@ -72,10 +96,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             children: [
               const SizedBox(height: 40),
 
-              Text(
-                'Join us to start searching',
-                style: context.bold24TextMain,
-              ),
+              Text('Join us to start searching', style: context.bold24TextMain),
 
               const SizedBox(height: 8),
 
@@ -86,68 +107,68 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               const SizedBox(height: 24),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSocialButton(
-                      'Google',
-                      Icons.g_mobiledata,
+              // GOOGLE
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: state.isLoading
+                          ? null
+                          : _onGoogleSignInPressed,
+                      icon: const Icon(Icons.g_mobiledata, size: 24),
+                      label: const Text('Continue with Google'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.textBorders),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSocialButton(
-                      'Facebook',
-                      Icons.facebook,
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
 
               const SizedBox(height: 24),
 
-              Text(
-                'Name',
-                style: context.semiBold14TextMain,
-              ),
+              // NAME
+              Text('Name', style: context.semiBold14TextMain),
 
               const SizedBox(height: 8),
 
               TextField(
                 controller: _nameController,
+                textInputAction: TextInputAction.next,
                 decoration: _inputDecoration('Enter your name'),
               ),
 
               const SizedBox(height: 16),
 
-              Text(
-                'Email',
-                style: context.semiBold14TextMain,
-              ),
+              // EMAIL
+              Text('Email', style: context.semiBold14TextMain),
 
               const SizedBox(height: 8),
 
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 decoration: _inputDecoration('Enter your email'),
               ),
 
               const SizedBox(height: 16),
 
-              Text(
-                'Password',
-                style: context.semiBold14TextMain,
-              ),
+              // PASSWORD
+              Text('Password', style: context.semiBold14TextMain),
 
               const SizedBox(height: 8),
 
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration(
-                  'Enter your password',
-                ).copyWith(
+                textInputAction: TextInputAction.done,
+                decoration: _inputDecoration('Enter your password').copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -166,6 +187,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               const SizedBox(height: 24),
 
+              // SIGN UP
               BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, state) {
                   if (state.isLoading) {
@@ -185,6 +207,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
               const SizedBox(height: 16),
 
+              // LOGIN
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -194,13 +217,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     text: TextSpan(
                       style: context.regular12TextSub,
                       children: [
-                        const TextSpan(
-                          text: 'Have an account? ',
-                        ),
-                        TextSpan(
-                          text: 'Login',
-                          style: context.bold12Primary,
-                        ),
+                        const TextSpan(text: 'Have an account? '),
+                        TextSpan(text: 'Login', style: context.bold12Primary),
                       ],
                     ),
                   ),
@@ -215,29 +233,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildSocialButton(
-    String label,
-    IconData icon,
-  ) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: Icon(
-        icon,
-        size: 20,
-      ),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        side: const BorderSide(
-          color: AppColors.textBorders,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
-
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -247,10 +242,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }

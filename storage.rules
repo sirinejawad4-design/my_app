@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && firestore.exists(
+          /databases/(default)/documents/users/$(request.auth.uid)
+        )
+        && firestore.get(
+          /databases/(default)/documents/users/$(request.auth.uid)
+        ).data.role == 'admin';
+    }
+
+    function isValidImage() {
+      return request.resource != null
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /doctors/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    match /admin_profiles/{fileName} {
+      allow read: if isSignedIn();
+
+      allow create, update: if isAdmin()
+        && fileName == request.auth.uid + '.jpg'
+        && isValidImage();
+
+      allow delete: if isAdmin()
+        && fileName == request.auth.uid + '.jpg';
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

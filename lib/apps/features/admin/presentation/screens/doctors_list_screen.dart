@@ -50,7 +50,10 @@ class _DoctorsListScreenState extends State<DoctorsListScreen> {
           centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AppColors.white),
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: AppColors.white,
+              ),
               onPressed: () {},
             ),
           ],
@@ -88,7 +91,9 @@ class _DoctorsListScreenState extends State<DoctorsListScreen> {
                                   hintText: 'Search doctors...',
                                   hintStyle: context.regular14TextSub,
                                   border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                 ),
                               ),
                             ),
@@ -98,17 +103,23 @@ class _DoctorsListScreenState extends State<DoctorsListScreen> {
                       const SizedBox(height: 20),
                       Row(
                         children: [
-                          _buildStatCard(context, 'Total Doctors', '${state.doctors.length}'),
+                          _buildStatCard(
+                            context,
+                            'Total Doctors',
+                            '${state.doctors.length}',
+                          ),
                           const SizedBox(width: 16),
-                          _buildStatCard(context, 'Active', '${state.doctors.length}'),
+                          _buildStatCard(
+                            context,
+                            'Active',
+                            '${state.doctors.length}',
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                Expanded(
-                  child: _buildDoctorsBody(context, state, doctors),
-                ),
+                Expanded(child: _buildDoctorsBody(context, state, doctors)),
               ],
             );
           },
@@ -149,7 +160,7 @@ class _DoctorsListScreenState extends State<DoctorsListScreen> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: doctors.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final doctor = doctors[index];
         return _buildDoctorTile(context, doctor);
@@ -170,7 +181,11 @@ class _DoctorsListScreenState extends State<DoctorsListScreen> {
             const CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.white,
-              child: Icon(Icons.people_outline, color: AppColors.primary, size: 18),
+              child: Icon(
+                Icons.people_outline,
+                color: AppColors.primary,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 8),
             Column(
@@ -187,45 +202,63 @@ class _DoctorsListScreenState extends State<DoctorsListScreen> {
   }
 
   Widget _buildDoctorTile(BuildContext context, Doctor doctor) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.textBorders),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: AppColors.grey100,
-            backgroundImage: doctor.imageUrl.isNotEmpty
-                ? NetworkImage(doctor.imageUrl)
-                : null,
-            child: doctor.imageUrl.isEmpty
-                ? const Icon(Icons.person, color: AppColors.textSub)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(doctor.name, style: context.semiBold14TextMain),
-                Text(doctor.specialty, style: context.regular12TextSub),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.successLight,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text('Active', style: context.regular11Success),
-                ),
-              ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        context.push(
+          '/admin-doctor-details?doctorId=${Uri.encodeComponent(doctor.id)}',
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.textBorders),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppColors.grey100,
+              backgroundImage: doctor.imageUrl.isNotEmpty
+                  ? NetworkImage(doctor.imageUrl)
+                  : null,
+              child: doctor.imageUrl.isEmpty
+                  ? const Icon(Icons.person, color: AppColors.textSub)
+                  : null,
             ),
-          ),
-          const Icon(Icons.more_vert, color: AppColors.textSub),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(doctor.name, style: context.semiBold14TextMain),
+                  Text(doctor.specialty, style: context.regular12TextSub),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: doctor.isActive
+                          ? AppColors.successLight
+                          : AppColors.grey100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      doctor.isActive ? 'Active' : 'Inactive',
+                      style: doctor.isActive
+                          ? context.regular11Success
+                          : context.regular11TextSub,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.textSub),
+          ],
+        ),
       ),
     );
   }

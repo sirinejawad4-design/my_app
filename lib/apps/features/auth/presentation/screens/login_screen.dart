@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../logic/cubit/auth_cubit.dart';
 import '../../logic/cubit/auth_state.dart';
@@ -17,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
+
   final TextEditingController _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
@@ -28,12 +29,16 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // ============================================================
+  // EMAIL LOGIN
+  // ============================================================
+
   Future<void> _onLoginPressed() async {
     final authCubit = context.read<AuthCubit>();
 
     await authCubit.login(
-      email: _emailController.text,
-      password: _passwordController.text,
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
     );
 
     if (!mounted) return;
@@ -46,16 +51,44 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (state.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            state.errorMessage!,
-            style: context.regular12White,
-          ),
-          backgroundColor: AppColors.danger,
-        ),
-      );
+      _showError(state.errorMessage!);
     }
+  }
+
+  // ============================================================
+  // GOOGLE LOGIN
+  // ============================================================
+
+  Future<void> _onGooglePressed() async {
+    final authCubit = context.read<AuthCubit>();
+
+    await authCubit.signInWithGoogle();
+
+    if (!mounted) return;
+
+    final state = authCubit.state;
+
+    if (state.isSuccess) {
+      context.go('/home');
+      return;
+    }
+
+    if (state.errorMessage != null) {
+      _showError(state.errorMessage!);
+    }
+  }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: context.regular12White),
+        backgroundColor: AppColors.danger,
+      ),
+    );
   }
 
   @override
@@ -70,10 +103,10 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const SizedBox(height: 60),
 
-              Text(
-                'Welcome back',
-                style: context.bold24TextMain,
-              ),
+              // ======================================================
+              // TITLE
+              // ======================================================
+              Text('Welcome back', style: context.bold24TextMain),
 
               const SizedBox(height: 8),
 
@@ -84,56 +117,70 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 24),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSocialButton(
-                      'Google',
-                      Icons.g_mobiledata,
+              // ======================================================
+              // AUTH STATE
+              // ======================================================
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  // ==================================================
+                  // GOOGLE BUTTON
+                  // ==================================================
+
+                  return SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: state.isLoading ? null : _onGooglePressed,
+                      icon: const Icon(Icons.g_mobiledata, size: 24),
+                      label: const Text('Continue with Google'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.textBorders),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSocialButton(
-                      'Facebook',
-                      Icons.facebook,
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
 
               const SizedBox(height: 24),
 
-              Text(
-                'Email',
-                style: context.semiBold14TextMain,
-              ),
+              // ======================================================
+              // EMAIL
+              // ======================================================
+              Text('Email', style: context.semiBold14TextMain),
 
               const SizedBox(height: 8),
 
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration(
-                  'Enter your email',
-                ),
+                textInputAction: TextInputAction.next,
+                enabled: !context.watch<AuthCubit>().state.isLoading,
+                decoration: _inputDecoration('Enter your email'),
               ),
 
               const SizedBox(height: 16),
 
-              Text(
-                'Password',
-                style: context.semiBold14TextMain,
-              ),
+              // ======================================================
+              // PASSWORD
+              // ======================================================
+              Text('Password', style: context.semiBold14TextMain),
 
               const SizedBox(height: 8),
 
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
-                decoration: _inputDecoration(
-                  'Enter your password',
-                ).copyWith(
+                textInputAction: TextInputAction.done,
+                enabled: !context.watch<AuthCubit>().state.isLoading,
+                onSubmitted: (_) {
+                  if (!context.read<AuthCubit>().state.isLoading) {
+                    _onLoginPressed();
+                  }
+                },
+                decoration: _inputDecoration('Enter your password').copyWith(
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -152,12 +199,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 24),
 
+              // ======================================================
+              // LOGIN BUTTON / LOADING
+              // ======================================================
               BlocBuilder<AuthCubit, AuthState>(
                 builder: (context, state) {
                   if (state.isLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
+                    return const SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
                       ),
                     );
                   }
@@ -171,6 +225,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 12),
 
+              // ======================================================
+              // FORGOT PASSWORD
+              // ======================================================
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -185,6 +242,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 8),
 
+              // ======================================================
+              // SIGN UP
+              // ======================================================
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -194,13 +254,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     text: TextSpan(
                       style: context.regular12TextSub,
                       children: [
-                        const TextSpan(
-                          text: "Don't have an account? ",
-                        ),
-                        TextSpan(
-                          text: 'Join us',
-                          style: context.bold12Primary,
-                        ),
+                        const TextSpan(text: "Don't have an account? "),
+                        TextSpan(text: 'Join us', style: context.bold12Primary),
                       ],
                     ),
                   ),
@@ -215,28 +270,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSocialButton(
-    String label,
-    IconData icon,
-  ) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: Icon(
-        icon,
-        size: 20,
-      ),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        side: const BorderSide(
-          color: AppColors.textBorders,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
+  // ============================================================
+  // INPUT DECORATION
+  // ============================================================
 
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
@@ -247,10 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }

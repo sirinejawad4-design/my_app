@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../../generated/app_colors.dart';
 import '../../../../../generated/style_atoms.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -15,12 +16,13 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
   String _selectedRole = 'Patient';
 
   void _onContinuePressed() {
-  if (_selectedRole == 'Admin') {
-    context.go('/admin-login');
-  } else {
-    context.go('/sign-up');
+    if (_selectedRole == 'Admin') {
+      context.go('/admin-login');
+    } else {
+      context.go('/sign-up');
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,48 +33,58 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
           child: Column(
             children: [
               const SizedBox(height: 40),
+
+              // Logo
               const Icon(
                 Icons.local_hospital_rounded,
                 size: 40,
                 color: AppColors.primary,
               ),
+
               const SizedBox(height: 8),
-              Text(
-                'Doctor Hunt',
-                style: context.bold18TextMain,
-              ),
+
+              Text('Doctor Hunt', style: context.bold18TextMain),
+
               const SizedBox(height: 32),
-              Text(
-                'Choose your role',
-                style: context.bold22TextMain,
-              ),
+
+              // Title
+              Text('Choose your role', style: context.bold22TextMain),
+
               const SizedBox(height: 8),
+
               Text(
-                'This selected role determines the experience and available features',
+                'Select how you want to use Doctor Hunt',
                 textAlign: TextAlign.center,
                 style: context.regular12TextSub,
               ),
+
               const SizedBox(height: 32),
+
+              // Patient
               _buildRoleCard(
                 icon: Icons.person_outline,
                 title: 'Patient',
                 description:
-                    'Find doctors, book appointments, and manage your medical records',
+                    'Find doctors, book appointments, and manage your bookings',
                 roleValue: 'Patient',
               ),
+
               const SizedBox(height: 16),
+
+              // Admin
               _buildRoleCard(
                 icon: Icons.admin_panel_settings_outlined,
                 title: 'Admin',
                 description:
-                    'Manage doctors, appointments, users, and the platform',
+                    'Manage doctors, availability, appointments, and clinic location',
                 roleValue: 'Admin',
               ),
+
               const Spacer(),
-              CustomButton(
-                text: 'Continue',
-                onPressed: _onContinuePressed,
-              ),
+
+              // Continue
+              CustomButton(text: 'Continue', onPressed: _onContinuePressed),
+
               const SizedBox(height: 24),
             ],
           ),
@@ -96,6 +108,7 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
         });
       },
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(
@@ -104,29 +117,28 @@ class _ChooseRoleScreenState extends State<ChooseRoleScreen> {
           ),
           borderRadius: BorderRadius.circular(12),
           color: isSelected
-              ? AppColors.primary.withOpacity(0.05)
+              ? AppColors.primary.withValues(alpha: 0.05)
               : AppColors.white,
         ),
         child: Row(
           children: [
             Icon(icon, color: AppColors.primary, size: 28),
+
             const SizedBox(width: 12),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: context.bold14TextMain,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    description,
-                    style: context.regular12TextSub,
-                  ),
+                  Text(title, style: context.bold14TextMain),
+
+                  const SizedBox(height: 4),
+
+                  Text(description, style: context.regular12TextSub),
                 ],
               ),
             ),
+
             if (isSelected)
               const Icon(Icons.check_circle, color: AppColors.primary),
           ],
